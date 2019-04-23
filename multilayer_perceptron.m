@@ -10,11 +10,14 @@
 % w_vector is a vector of weight matrices
 % b_vector is a vector of biases vectors
 
-function y = feed(input_x , w_vector, b_vector)
-    h = input_x;
-    for i = 1 : size(w_vector)(2)
-        h = h * w_vector{i} + b_vector{i};
+function a = feed(input_x , w_vector, b_vector)
+    x_size = size(input_x)(1);
+    w_size = size(w_vector)(2);
+    a = input_x;
+    for i = 1 : w_size
+        h = (a * w_vector{i}) + generate_bias_matrix(b_vector{i}, x_size);
         y = tanh(h);
+        a = y;
     end
 
 endfunction
@@ -34,7 +37,7 @@ function a_vector = internal_feed(input_x , w_vector, b_vector, layers_vector)
 
     a_vector{1} = input_x;
     for i = 1 : w_size
-        h = (a_vector{i} * w_vector{i}) + [b_vector{i};b_vector{i};b_vector{i};b_vector{i}];
+        h = (a_vector{i} * w_vector{i}) + generate_bias_matrix(b_vector{i}, x_size);
         y = tanh(h);
         a_vector{i+1} = y;
     end
@@ -81,7 +84,7 @@ ZERO = 0;
     end
 end
 
-function [new_w_vector, new_b_vector] = back_propagate(w_vector, layers_vector, b_vector, y_set, y_hat, eta, a_vector, input)
+function [new_w_vector, new_b_vector] = back_propagate(w_vector, b_vector, layers_vector, y_set, y_hat, eta, a_vector, input)
     RANDOM = 1;
     BIAS = 2;
     ZERO = 0;
@@ -104,7 +107,7 @@ function [new_w_vector, new_b_vector] = back_propagate(w_vector, layers_vector, 
     
 endfunction
 
-function [w_vector, new_b_vector] = fit(x_set, y_set, epsilon, eta, w_vector, b_vector, layers_vector)
+function [new_w_vector, new_b_vector] = fit(x_set, y_set, epsilon, eta, w_vector, b_vector, layers_vector)
     % tenemos que calcular primero la de la ultima capa
     a_vector = internal_feed(x_set, w_vector, b_vector, layers_vector);
     error = epoch_error(y_set, a_vector{end});
@@ -112,13 +115,17 @@ function [w_vector, new_b_vector] = fit(x_set, y_set, epsilon, eta, w_vector, b_
     new_b_vector = b_vector;
     new_w_vector = w_vector;
     while( error > epsilon)
-        [new_w_vector, new_b_vector] = back_propagate(new_w_vector, layers_vector, new_b_vector, y_set, a_vector{end}, eta, a_vector, x_set);
+        [new_w_vector, new_b_vector] = back_propagate(w_vector, b_vector, layers_vector, y_set, a_vector{end}, eta, a_vector, x_set);
         a_vector = internal_feed(x_set, new_w_vector, new_b_vector, layers_vector);
-        error = epoch_error(y_set, a_vector{end});
+        %error = epoch_error(y_set, feed(x_set, new_w_vector, new_b_vector));
         epoch += 1;
-        printf("%d epochs \t %f error (MSE). \n", epoch, error);
+        printf("ERROR ----> %f\n", error);
+        w_vector = new_w_vector;
+        b_vector = new_b_vector;
+        error = epoch_error(y_set, a_vector{end});
     end
     
+    printf("%d epochs \t %f error (MSE). \n", epoch, error);
 
 endfunction
 
@@ -127,8 +134,7 @@ function [w_vector, b_vector] = create(layers_vector, eta, epsilon, x_set, y_set
     RANDOM = 1;
     BIAS = 2;
     ZERO = 0;
-    w_vector = createArrays(layers_vector, RANDOM);
-    b_vector = createArrays(layers_vector, BIAS);
-
-    [w_vector, b_vector] = fit(x_set, y_set, epsilon, eta, w_vector, b_vector, layers_vector);
+    old_w_vector = createArrays(layers_vector, RANDOM);
+    old_b_vector = createArrays(layers_vector, BIAS);
+    [w_vector, b_vector] = fit(x_set, y_set, epsilon, eta, old_w_vector, old_b_vector, layers_vector);
 endfunction
