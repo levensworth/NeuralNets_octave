@@ -88,9 +88,12 @@ function [new_w_vector, new_b_vector] = back_propagate(w_vector, b_vector, layer
     RANDOM = 1;
     BIAS = 2;
     ZERO = 0;
-    delta = y_set - y_hat;
-    deltas = createArrays(layers_vector, ZERO);
     layers_size = size(w_vector)(2);
+    delta = y_set - y_hat;
+    f_prime = 1 - (y_hat .* y_hat);
+    delta = f_prime.* delta;
+    deltas = createArrays(layers_vector, ZERO);
+
     deltas{layers_size} = delta;
 
     for i = layers_size - 1 : -1 : 1
